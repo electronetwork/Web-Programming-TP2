@@ -30,7 +30,12 @@ class AuthController extends Controller
     {
         return view('auth.registration');
     }
-      
+    
+    public function resetpassword()
+    {
+        return view('auth.reset-password');
+    }
+
     /**
      * Write code on Method
      *
@@ -49,7 +54,7 @@ class AuthController extends Controller
                         ->withSuccess('You have Successfully loggedin');
         }
   
-        return redirect("login")->withSuccess('Oppes! You have entered invalid credentials');
+        return redirect("login")->withSuccess('Opps! You have entered invalid credentials');
     }
       
     /**
@@ -61,8 +66,8 @@ class AuthController extends Controller
     {  
         $request->validate([
             'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
+            'email' => ['required','email','unique:users',],
+            'password' => ['required','min:10','regex:/[a-z]/','regex:/[A-Z]/','regex:/[0-9]/','regex:/[@$!%*#?&]/',],
         ]);
            
         $data = $request->all();
@@ -71,6 +76,23 @@ class AuthController extends Controller
         return redirect("dashboard")->withSuccess('Great! You have Successfully loggedin');
     }
     
+    public function postReset(Request $request)
+    {
+        $request->validate([
+            'email' => 'required',
+            'password' => 'required',
+        ]);
+   
+        $credentials = $request->only('email', 'password');
+        if (Auth::attempt($credentials)) {
+            return redirect()->intended('dashboard')
+                        ->withSuccess('You have Successfully loggedin');
+        }
+  
+        return redirect("login")->withSuccess('Oppes! You have entered invalid credentials');
+        return view('auth.login');
+    }
+
     /**
      * Write code on Method
      *
@@ -110,4 +132,21 @@ class AuthController extends Controller
   
         return Redirect('login');
     }
+
+    protected function validator(array $data)
+    {
+        return Validator::make($data, [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'captcha' => ['required','captcha'],
+        ]);
+    }
+   
+    public function reloadCaptcha()
+    {
+        return response()->json(['captcha'=> captcha_img()]);
+    }
+
+
 }
